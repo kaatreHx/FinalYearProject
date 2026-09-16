@@ -1,0 +1,81 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  firstName String
+  middleName String?
+  lastName  String
+  phone     String?  @unique
+  email     String   @unique
+  password  String
+  kycApplication KycApplication?
+  isAgent   Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum KycStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum DocumentType {
+  NATIONAL_ID
+  CITIZENSHIP
+  PASSPORT
+  DRIVERS_LICENSE
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+model KycApplication {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id])
+
+  // Personal Identity
+  firstName      String
+  middleName     String?
+  lastName       String
+  dob           DateTime
+  gender        Gender
+
+  // Identity Document Details
+  documentType       DocumentType
+  documentNumber     String
+  documentExpiryDate DateTime
+
+  // Address Information
+  street  String
+  city    String
+  zip     String
+
+  // File Uploads (Proof) - store paths/URLs
+  documentFrontUrl String
+  documentBackUrl  String
+  selfieUrl        String
+
+  status       KycStatus @default(PENDING)
+  rejectReason String?
+
+  createdAt DateTime @updatedAt
+  updatedAt DateTime @default(now())
+}

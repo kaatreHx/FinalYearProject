@@ -1,0 +1,79 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Environment Variables
+.env
+.env.*
+!.env.example
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Build Outputs & TypeScript
+dist/
+build/
+out/
+*.tsbuildinfo
+.tsbuildinfo
+
+# Prisma & Local Databases
+src/generated/
+prisma/generated/
+*.db
+*.db-journal
+*.sqlite
+*.sqlite-journal
+dev.db
+dev.db-journal
+
+# Uploaded Files (Multer / Media)
+uploads/*
+!uploads/.gitkeep
+
+# Logs & Diagnostics
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+pnpm-debug.log*
+pid
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage and Diagnostic Reports
+coverage/
+*.lcov
+.nyc_output/
+.vitest/
+.jest/
+
+# OS & System Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+
+# IDE & Editor Settings
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.swp
+*.swo
+*~
+
+# AI & Tooling Caches
+.gemini/
+.agents/
+.claude/
+.cursor/

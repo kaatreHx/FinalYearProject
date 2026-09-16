@@ -1,0 +1,18 @@
+.header {
+  margin-bottom: 24px;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 26px;
+  color: var(--ink-navy);
+  margin: 0 0 6px 0;
+}
+
+.description {
+  font-size: 14px;
+  color: #6b6559;
+  margin: 0;
+  max-width: 560px;
+}

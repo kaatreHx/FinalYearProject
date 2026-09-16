@@ -1,0 +1,35 @@
+.page {
+  min-height: 100vh;
+  background: var(--stone);
+}
+
+.body {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 28px 32px 40px;
+}
+
+.header {
+  margin-bottom: 24px;
+}
+
+.heading {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 26px;
+  color: var(--ink-navy);
+  margin: 0 0 6px 0;
+}
+
+.subheading {
+  font-size: 14px;
+  color: #6b6559;
+  margin: 0;
+  max-width: 520px;
+}
+
+@media (max-width: 900px) {
+  .body {
+    padding: 20px;
+  }
+}

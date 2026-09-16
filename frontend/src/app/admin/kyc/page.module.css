@@ -1,0 +1,114 @@
+.reviewBtn {
+  background: none;
+  border: 1px solid var(--stone-dim);
+  color: var(--ink-navy);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 6px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.15s ease;
+}
+
+.reviewBtn:hover {
+  border-color: var(--brass);
+}
+
+.detailPanel {
+  background: var(--stone);
+  border-radius: 4px;
+  padding: 16px 18px;
+  margin: 4px 0;
+}
+
+.fileRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.fileChip {
+  font-size: 12.5px;
+  color: var(--charcoal);
+  background: var(--white);
+  border: 1px solid var(--stone-dim);
+  border-radius: 4px;
+  padding: 5px 10px;
+}
+
+.mockNote {
+  font-size: 12px;
+  color: #8a8474;
+  margin: 0 0 14px 0;
+  font-style: italic;
+}
+
+.noteLabel {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #8a8474;
+  margin-bottom: 6px;
+}
+
+.noteInput {
+  width: 100%;
+  resize: vertical;
+  border: 1px solid var(--stone-dim);
+  border-radius: 4px;
+  background: var(--white);
+  padding: 8px 10px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--charcoal);
+  outline: none;
+  margin-bottom: 14px;
+  transition: border-color 0.2s ease;
+}
+
+.noteInput:focus {
+  border-color: var(--brass);
+}
+
+.rejectError {
+  font-size: 12px;
+  color: var(--error);
+  margin: -8px 0 14px 0;
+}
+
+.decisionRow {
+  display: flex;
+  gap: 10px;
+}
+
+.approveBtn {
+  background: var(--sage);
+  color: var(--white);
+  border: none;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 9px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.rejectBtn {
+  background: none;
+  border: 1px solid var(--error);
+  color: var(--error);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 9px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+}

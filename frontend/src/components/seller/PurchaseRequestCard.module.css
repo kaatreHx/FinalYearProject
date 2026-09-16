@@ -1,0 +1,136 @@
+.card {
+  background: var(--white);
+  border: 1px solid var(--stone-dim);
+  border-radius: 6px;
+  padding: 16px 18px;
+}
+
+.top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.buyer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.avatar {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--ink-navy);
+  color: var(--stone);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.buyerName {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--charcoal);
+  margin: 0;
+}
+
+.buyerEmail {
+  font-size: 12px;
+  color: #6b6559;
+  margin: 0;
+}
+
+.right {
+  flex-shrink: 0;
+  text-align: right;
+}
+
+.offer {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--ink-navy);
+}
+
+.date {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #8a8474;
+  margin-top: 2px;
+}
+
+.message {
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--charcoal);
+  margin: 0 0 14px 0;
+}
+
+.attachments {
+  list-style: none;
+  margin: -6px 0 14px 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.attachment {
+  font-size: 12px;
+  color: #6b6559;
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-top: 1px solid var(--stone-dim);
+  padding-top: 12px;
+}
+
+.statusTag {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 4px 9px;
+  border-radius: 3px;
+  background: var(--stone-dim);
+  color: var(--brass-dim);
+}
+
+.statusTag[data-status="Accepted"] {
+  background: var(--sage);
+  color: var(--white);
+}
+
+.statusTag[data-status="Declined"] {
+  background: var(--error);
+  color: var(--white);
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+.actions button {
+  width: auto;
+  padding: 9px 16px;
+}
+
+.declineBtn {
+  color: var(--error);
+}

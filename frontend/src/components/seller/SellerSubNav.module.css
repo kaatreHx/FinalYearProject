@@ -1,0 +1,35 @@
+.subNav {
+  display: flex;
+  gap: 4px;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 18px 32px 0;
+}
+
+.tab {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: #8a8474;
+  padding: 10px 4px;
+  border-bottom: 2px solid transparent;
+  margin-right: 24px;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.tab:hover {
+  color: var(--ink-navy);
+}
+
+.tabActive {
+  color: var(--ink-navy);
+  border-bottom-color: var(--brass);
+}
+
+@media (max-width: 900px) {
+  .subNav {
+    padding: 16px 20px 0;
+  }
+}

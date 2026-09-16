@@ -1,0 +1,91 @@
+.sidebar {
+  width: 230px;
+  flex-shrink: 0;
+  min-height: 100vh;
+  background: var(--ink-navy);
+  color: var(--stone);
+  display: flex;
+  flex-direction: column;
+  padding: 24px 18px;
+  position: sticky;
+  top: 0;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 36px;
+  padding: 0 6px;
+}
+
+.brandMark {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  background: var(--brass);
+  flex-shrink: 0;
+}
+
+.brandName {
+  font-family: var(--font-display);
+  font-size: 14.5px;
+  font-weight: 500;
+  color: var(--stone);
+  line-height: 1.2;
+}
+
+.brandSub {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--line-blue);
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.navLink {
+  display: block;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--line-blue);
+  text-decoration: none;
+  padding: 11px 12px;
+  border-radius: 5px;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.navLink:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--stone);
+}
+
+.navLinkActive {
+  background: var(--brass);
+  color: var(--ink-navy);
+}
+
+.navLinkActive:hover {
+  background: var(--brass);
+  color: var(--ink-navy);
+}
+
+.backLink {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--line-blue);
+  text-decoration: none;
+  padding: 12px;
+}
+
+.backLink:hover {
+  color: var(--stone);
+}

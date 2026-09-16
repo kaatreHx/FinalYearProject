@@ -1,0 +1,25 @@
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 22px;
+}
+
+.empty {
+  padding: 80px 20px;
+  text-align: center;
+  border: 1px dashed var(--stone-dim);
+  border-radius: 6px;
+}
+
+.emptyTitle {
+  font-family: var(--font-display);
+  font-size: 18px;
+  color: var(--ink-navy);
+  margin: 0 0 6px 0;
+}
+
+.emptyBody {
+  font-size: 13px;
+  color: #8a8474;
+  margin: 0;
+}

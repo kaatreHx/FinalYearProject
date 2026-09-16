@@ -1,0 +1,126 @@
+.sidebar {
+  width: 240px;
+  flex-shrink: 0;
+  padding-right: 8px;
+}
+
+.section {
+  margin-bottom: 30px;
+}
+
+.sectionLabel {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #8a8474;
+  margin: 0 0 12px 0;
+}
+
+.typeList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.typeBtn {
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 7px 8px;
+  border-radius: 4px;
+  font-size: 14px;
+  color: var(--charcoal);
+  cursor: pointer;
+}
+
+.typeBtn:hover {
+  background: var(--stone-dim);
+}
+
+.typeBtnActive {
+  background: var(--ink-navy);
+  color: var(--stone);
+}
+
+.typeBtnActive:hover {
+  background: var(--ink-navy);
+}
+
+.priceRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.priceInput {
+  width: 100%;
+  min-width: 0;
+  border: none;
+  border-bottom: 1.5px solid #d8d2c4;
+  background: transparent;
+  padding: 6px 2px 8px 2px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--charcoal);
+  outline: none;
+}
+
+.priceInput:focus {
+  border-bottom-color: var(--brass);
+}
+
+.priceDash {
+  color: #b5af9e;
+}
+
+.bedList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.bedBtn {
+  border: 1px solid var(--stone-dim);
+  background: var(--white);
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 13px;
+  color: var(--charcoal);
+  cursor: pointer;
+}
+
+.bedBtn:hover {
+  border-color: var(--brass);
+}
+
+.bedBtnActive {
+  background: var(--ink-navy);
+  border-color: var(--ink-navy);
+  color: var(--stone);
+}
+
+.clearBtn {
+  background: none;
+  border: none;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--brass-dim);
+  cursor: pointer;
+  padding: 0;
+  border-bottom: 1px solid transparent;
+}
+
+.clearBtn:hover {
+  border-bottom-color: var(--brass-dim);
+}
+
+@media (max-width: 900px) {
+  .sidebar {
+    width: 100%;
+    padding-right: 0;
+    margin-bottom: 24px;
+  }
+}

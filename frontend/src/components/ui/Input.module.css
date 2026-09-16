@@ -1,0 +1,50 @@
+.field {
+  margin-bottom: 20px;
+}
+
+.label {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #8a8474;
+  margin-bottom: 8px;
+}
+
+.input {
+  width: 100%;
+  border: none;
+  border-bottom: 1.5px solid #d8d2c4;
+  background: transparent;
+  padding: 8px 2px 10px 2px;
+  font-family: var(--font-body);
+  font-size: 15px;
+  color: var(--charcoal);
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.input::placeholder {
+  color: #b5af9e;
+}
+
+.input:focus {
+  border-bottom-color: var(--brass);
+}
+
+.input:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+.input[aria-invalid="true"] {
+  border-bottom-color: var(--error);
+}
+
+.error {
+  margin: 6px 0 0 0;
+  font-size: 12.5px;
+  color: var(--error);
+}

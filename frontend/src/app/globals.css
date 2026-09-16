@@ -1,0 +1,38 @@
+:root {
+  --ink-navy: #16233a;
+  --stone: #f6f2ec;
+  --stone-dim: #eee8de;
+  --brass: #b98b4e;
+  --brass-dim: #8f6c3c;
+  --sage: #7c8a73;
+  --charcoal: #262620;
+  --line-blue: #7c96b8;
+  --line-blue-soft: rgba(124, 150, 184, 0.35);
+  --white: #ffffff;
+  --error: #b3492f;
+
+  --font-display: "Fraunces", serif;
+  --font-body: "Inter", sans-serif;
+  --font-mono: "IBM Plex Mono", monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--stone);
+  color: var(--charcoal);
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: inherit;
+}

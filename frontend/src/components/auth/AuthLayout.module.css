@@ -1,0 +1,196 @@
+.app {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  min-height: 100vh;
+}
+
+/* ---- Blueprint panel ---- */
+.brandPanel {
+  background: var(--ink-navy);
+  color: var(--stone);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 48px 56px;
+}
+
+.brandPanel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(var(--line-blue-soft) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line-blue-soft) 1px, transparent 1px);
+  background-size: 40px 40px;
+  opacity: 0.12;
+  pointer-events: none;
+}
+
+.brandTop {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brandMark {
+  width: 28px;
+  height: 28px;
+  border: 1.5px solid var(--brass);
+  border-radius: 2px;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.brandMark::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 8px;
+  height: 8px;
+  background: var(--brass);
+  transform: translate(-50%, -50%);
+  border-radius: 1px;
+}
+
+.brandName {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--stone);
+}
+
+.blueprintStage {
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 24px 0;
+}
+
+.planSvg {
+  width: 100%;
+  max-width: 440px;
+  height: auto;
+}
+
+.planLine {
+  fill: none;
+  stroke: var(--line-blue);
+  stroke-width: 1.4;
+  stroke-linejoin: round;
+  stroke-dasharray: 900;
+  stroke-dashoffset: 900;
+  animation: draw 2.6s ease forwards;
+}
+
+.delay1 {
+  animation-delay: 0.15s;
+}
+.delay2 {
+  animation-delay: 0.5s;
+}
+.delay3 {
+  animation-delay: 0.9s;
+}
+
+@keyframes draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.planDot {
+  fill: var(--brass);
+  opacity: 0;
+  animation: fadeIn 0.5s ease forwards;
+  animation-delay: 2.2s;
+}
+
+.planLabel {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  fill: var(--line-blue);
+  opacity: 0;
+  animation: fadeIn 0.6s ease forwards;
+  animation-delay: 2.4s;
+  letter-spacing: 0.04em;
+}
+
+@keyframes fadeIn {
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .planLine {
+    stroke-dashoffset: 0;
+    animation: none;
+  }
+  .planDot,
+  .planLabel {
+    opacity: 1;
+    animation: none;
+  }
+}
+
+.brandQuote {
+  position: relative;
+  z-index: 2;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 22px;
+  line-height: 1.4;
+  max-width: 420px;
+  color: var(--stone);
+}
+
+.brandQuote span {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--brass);
+  margin-top: 14px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* ---- Form panel ---- */
+.formPanel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+}
+
+.formWrap {
+  width: 100%;
+  max-width: 380px;
+}
+
+.plotRef {
+  margin-top: 40px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: #b5af9e;
+  letter-spacing: 0.04em;
+}
+
+@media (max-width: 860px) {
+  .app {
+    grid-template-columns: 1fr;
+  }
+  .brandPanel {
+    display: none;
+  }
+  .formPanel {
+    padding: 32px 20px;
+  }
+}

@@ -1,0 +1,121 @@
+.card {
+  background: var(--white);
+  border: 1px solid var(--stone-dim);
+  border-radius: 6px;
+  padding: 26px 28px 28px;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 19px;
+  color: var(--ink-navy);
+  margin: 0 0 4px 0;
+}
+
+.description {
+  font-size: 13.5px;
+  color: #6b6559;
+  line-height: 1.5;
+  margin: 0 0 20px 0;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.textareaField {
+  margin-bottom: 20px;
+}
+
+.textareaLabel {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #8a8474;
+  margin-bottom: 8px;
+}
+
+.textarea {
+  width: 100%;
+  resize: vertical;
+  border: none;
+  border-bottom: 1.5px solid #d8d2c4;
+  background: transparent;
+  padding: 8px 2px 10px 2px;
+  font-family: var(--font-body);
+  font-size: 14.5px;
+  line-height: 1.5;
+  color: var(--charcoal);
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.textarea:focus {
+  border-bottom-color: var(--brass);
+}
+
+.fieldError {
+  font-size: 12px;
+  color: var(--error);
+  margin: 6px 0 0 0;
+}
+
+.successCard {
+  background: var(--white);
+  border: 1px solid var(--stone-dim);
+  border-radius: 6px;
+  padding: 36px 30px;
+  text-align: center;
+}
+
+.successIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--sage);
+  color: var(--white);
+  font-size: 20px;
+  margin-bottom: 16px;
+}
+
+.successTitle {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 20px;
+  color: var(--ink-navy);
+  margin: 0 0 10px 0;
+}
+
+.successBody {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #6b6559;
+  margin: 0 0 20px 0;
+}
+
+.secondaryBtn {
+  background: none;
+  border: none;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--charcoal);
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 4px;
+}
+
+@media (max-width: 560px) {
+  .row {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+}

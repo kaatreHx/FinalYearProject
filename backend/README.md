@@ -1,191 +1,39 @@
-# Real Estate System - Backend API
+# Property listing + government verification + NFT
 
-A robust backend RESTful API service for a Real Estate Management platform, built with **Node.js**, **Express.js**, **TypeScript**, **Prisma ORM**, and **PostgreSQL**.
+## Setup
+1. `npm i ethers`
+2. Merge `prisma/property.prisma` into your `schema.prisma` (+ the two `User` fields noted at the top), then `npx prisma migrate dev -n property_listing`
+3. Mark government officers in the DB: `UPDATE "User" SET "isGovernment" = true WHERE email = '...'`
+4. Add to `.env`:
+   ```
+   PUBLIC_BASE_URL=https://your-api-domain      # used in NFT tokenURI / image URLs
+   NFT_RPC_URL=...                              # JSON-RPC endpoint of your chain
+   NFT_CONTRACT_ADDRESS=0x...                   # deployed contracts/PropertyNFT.sol
+   NFT_MINTER_PRIVATE_KEY=0x...                 # the contract owner's key (keep in a secret manager)
+   ```
+5. Add `private-uploads/` to `.gitignore`.
 
----
+## Flow
+seller creates (PENDING) -> gov dispatch (DISPATCHED) -> gov verify (VERIFIED) -> seller mint (MINTING -> MINTED)
+gov can reject from PENDING/DISPATCHED (REJECTED); seller edits -> back to PENDING.
 
-## 🚀 Features
+## Endpoints
+| Method | Path | Who | Notes |
+|---|---|---|---|
+| GET | /api/properties | public | VERIFIED + MINTED only. `?city&propertyType&minPrice&maxPrice&page&limit` |
+| GET | /api/properties/:id | public / owner / gov | public view if VERIFIED/MINTED; otherwise owner or gov only (404 for everyone else) |
+| GET | /api/properties/:id/metadata | public | ERC-721 tokenURI JSON (MINTING/MINTED) |
+| POST | /api/properties | seller (KYC approved) | multipart: fields + `images[]` (1-10) + `documents[]` (1-5). Starts PENDING |
+| GET | /api/properties/mine | seller | `?status=` |
+| PUT | /api/properties/:id | seller | PENDING/REJECTED only; optional new files + `removeFileIds`; resets to PENDING |
+| DELETE | /api/properties/:id | seller | PENDING/REJECTED only |
+| GET | /api/properties/:id/documents/:fileId | owner / gov | private ownership docs |
+| POST | /api/properties/:id/mint | seller | VERIFIED only; body `{ "walletAddress": "0x..." }` if not set at listing |
+| GET | /api/government/properties | gov | review queue, `?status=PENDING` (default) |
+| GET | /api/government/properties/:id | gov | full record + status history |
+| POST | /api/government/properties/:id/dispatch | gov | PENDING -> DISPATCHED, body `{ note? }` |
+| POST | /api/government/properties/:id/verify | gov | DISPATCHED -> VERIFIED, body `{ governmentRefNumber, notes? }` |
+| POST | /api/government/properties/:id/reject | gov | body `{ reason }` |
 
-- **User Authentication**: Secure registration, login, and JWT-based authentication with encrypted passwords (`bcryptjs`).
-- **User Management**: Profile creation, updates, and user role management.
-- **KYC Verification System**: Identity verification workflow with document upload support (National ID, Passport, Citizenship, Driver's License) and status management (Pending, Approved, Rejected).
-- **Property & Seller Management**: Modules for managing property listings, seller statistics, and purchase requests.
-- **Media Storage**: Static file uploads handling via `Multer`.
-
----
-
-## 🛠️ Tech Stack
-
-- **Runtime Environment**: [Node.js](https://nodejs.org/) (v18+ recommended)
-- **Language**: [TypeScript](https://www.typescriptlang.org/)
-- **Web Framework**: [Express.js](https://expressjs.com/) (v5)
-- **Database**: [PostgreSQL](https://www.postgresql.org/)
-- **ORM**: [Prisma](https://www.prisma.io/) (v6)
-- **Authentication**: JSON Web Tokens (`jsonwebtoken`) & `bcryptjs`
-- **File Uploads**: `multer`
-
----
-
-## 📋 Prerequisites
-
-Before setting up the project, ensure you have the following installed on your local machine:
-
-- **Node.js** (v18.x or higher)
-- **npm** (v9.x or higher) or **yarn** / **pnpm**
-- **PostgreSQL** database server running locally or accessible remotely (or via Docker)
-
----
-
-## ⚙️ Installation & Setup Guide
-
-Follow these steps to get the project up and running on your local machine:
-
-### 1. Clone the Repository
-
-```bash
-git clone <repository-url>
-cd real-estate-system
-```
-
-### 2. Install Dependencies
-
-Install the project dependencies using npm:
-
-```bash
-npm install
-```
-
-### 3. Environment Configuration
-
-Create a `.env` file in the root directory by copying the `.env.example` template:
-
-```bash
-cp .env.example .env
-```
-
-Open `.env` and configure your environment variables:
-
-```env
-# Server Port
-PORT=4000
-
-# PostgreSQL Connection String
-DATABASE_URL="postgresql://<USERNAME>:<PASSWORD>@localhost:5432/<DATABASE_NAME>?schema=public"
-
-# JWT Secret Key
-JWT_SECRET="your_jwt_secret_key_here"
-```
-
-> **Note**: Replace `<USERNAME>`, `<PASSWORD>`, and `<DATABASE_NAME>` with your actual PostgreSQL credentials.
-
-### 4. Database Setup & Prisma Migrations
-
-Ensure your PostgreSQL database service is running, then execute the following Prisma commands to generate the client and apply database migrations:
-
-```bash
-# Generate Prisma Client
-npx prisma generate
-
-# Run Database Migrations (Applies schema to database)
-npx prisma migrate dev --name init
-```
-
-*Alternatively, if working with an existing database schema:*
-
-```bash
-npx prisma db push
-```
-
----
-
-## 🏃 Running the Application
-
-### Development Mode
-
-To start the development server with hot reload (using `tsx watch`):
-
-```bash
-npm run dev
-```
-
-The server will start at `http://localhost:4000` (or the port specified in your `.env` file).
-
-### Production Mode
-
-To build and run the application in production:
-
-```bash
-# 1. Compile TypeScript to JavaScript (dist folder)
-npm run build
-
-# 2. Start the compiled JavaScript server
-npm start
-```
-
----
-
-## 📂 Project Structure
-
-```text
-real-estate-system/
-├── prisma/
-│   ├── migrations/      # Database migration history
-│   └── schema.prisma    # Prisma database schema definition
-├── src/
-│   ├── app.ts           # Express app setup & middleware
-│   ├── server.ts        # Server entry point
-│   ├── config/          # Environment & app configurations
-│   ├── middleware/      # Custom middleware (auth, upload, etc.)
-│   ├── modules/         # Feature modules
-│   │   ├── admin/       # Admin functionality
-│   │   ├── auth/        # Authentication routes & controllers
-│   │   ├── kyc/         # KYC upload & verification logic
-│   │   ├── properties/  # Property management
-│   │   ├── purchase-requests/
-│   │   ├── seller-stats/# Seller metrics & statistics
-│   │   └── users/       # User profile routes
-│   ├── types/           # Custom TypeScript type declarations
-│   └── utils/           # Utility functions & helpers
-├── uploads/             # Static directory for uploaded files/documents
-├── .env                 # Local environment configuration (git-ignored)
-├── .env.example         # Environment variable template
-├── package.json         # Dependencies and npm scripts
-├── tsconfig.json        # TypeScript compiler options
-└── README.md            # Setup guide and documentation
-```
-
----
-
-## 🔌 API Endpoints Summary
-
-| Base Route | Description |
-| :--- | :--- |
-| `POST /api/auth/register` | User Registration |
-| `POST /api/auth/login` | User Authentication / Login |
-| `GET /api/users/profile` | Get logged-in user profile |
-| `POST /api/kyc/apply` | Submit KYC identity verification application |
-| `GET /api/kyc/status` | Check KYC status |
-| `GET /uploads/*` | Static file access for uploaded documents/images |
-
----
-
-## 🛠️ Useful Prisma Commands
-
-- **Prisma Studio** (Visual GUI to view and manage database records):
-  ```bash
-  npx prisma studio
-  ```
-- **Reset Database**:
-  ```bash
-  npx prisma migrate reset
-  ```
-- **Format Schema**:
-  ```bash
-  npx prisma format
-  ```
-
----
-
-## 📄 License
-
-This project is licensed under the [ISC License](LICENSE).
+Create fields: title, description, propertyType (HOUSE|APARTMENT|LAND|COMMERCIAL), price, areaSqFt,
+bedrooms?, bathrooms?, street, city, zip, landRegistrationNumber, ownerWalletAddress?

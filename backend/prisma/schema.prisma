@@ -14,17 +14,19 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  firstName String
-  middleName String?
-  lastName  String
-  phone     String?  @unique
-  email     String   @unique
-  password  String
+  id             String          @id @default(uuid())
+  firstName      String
+  middleName     String?
+  lastName       String
+  phone          String?         @unique
+  email          String          @unique
+  password       String
   kycApplication KycApplication?
-  isAgent   Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  isAgent        Boolean         @default(false)
+  isGovernment   Boolean         @default(false) // NEW: government officer flag (set manually in DB)
+  properties     Property[]                      // NEW: back-relation required by Property.seller
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
 }
 
 enum KycStatus {
@@ -47,16 +49,16 @@ enum Gender {
 }
 
 model KycApplication {
-  id        String   @id @default(uuid())
-  userId    String   @unique
-  user      User     @relation(fields: [userId], references: [id])
+  id     String @id @default(uuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id])
 
   // Personal Identity
-  firstName      String
-  middleName     String?
-  lastName       String
-  dob           DateTime
-  gender        Gender
+  firstName  String
+  middleName String?
+  lastName   String
+  dob        DateTime
+  gender     Gender
 
   // Identity Document Details
   documentType       DocumentType
@@ -64,9 +66,9 @@ model KycApplication {
   documentExpiryDate DateTime
 
   // Address Information
-  street  String
-  city    String
-  zip     String
+  street String
+  city   String
+  zip    String
 
   // File Uploads (Proof) - store paths/URLs
   documentFrontUrl String
@@ -76,6 +78,102 @@ model KycApplication {
   status       KycStatus @default(PENDING)
   rejectReason String?
 
-  createdAt DateTime @updatedAt
-  updatedAt DateTime @default(now())
+  // FIXED: these two were swapped in your original
+  // (createdAt had @updatedAt, updatedAt had @default(now()))
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum PropertyStatus {
+  PENDING    // seller submitted, waiting for government
+  DISPATCHED // sent to / picked up by the government for verification
+  VERIFIED   // government confirmed ownership; ready to mint
+  REJECTED   // government rejected; seller may edit & resubmit
+  MINTING    // mint tx in flight (lock state, prevents double mint)
+  MINTED     // NFT minted
+}
+
+enum PropertyType {
+  HOUSE
+  APARTMENT
+  LAND
+  COMMERCIAL
+}
+
+enum PropertyFileKind {
+  IMAGE
+  DOCUMENT
+}
+
+model Property {
+  id       String @id @default(uuid())
+  sellerId String
+  seller   User   @relation(fields: [sellerId], references: [id])
+
+  title                  String
+  description            String       @db.Text
+  propertyType           PropertyType
+  price                  Decimal      @db.Decimal(18, 2)
+  areaSqFt               Float
+  bedrooms               Int?
+  bathrooms              Int?
+  street                 String
+  city                   String
+  zip                    String
+  landRegistrationNumber String
+
+  status PropertyStatus @default(PENDING)
+
+  // government review
+  dispatchedAt        DateTime?
+  verifiedAt          DateTime?
+  verifiedById        String?
+  governmentRefNumber String?
+  verificationNotes   String?
+  rejectReason        String?
+
+  // NFT
+  ownerWalletAddress String?
+  tokenId            String?
+  contractAddress    String?
+  mintTxHash         String?
+  mintedAt           DateTime?
+
+  files      PropertyFile[]
+  statusLogs PropertyStatusLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([sellerId])
+  @@index([city])
+  @@index([landRegistrationNumber])
+}
+
+model PropertyFile {
+  id           String           @id @default(uuid())
+  propertyId   String
+  property     Property         @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  kind         PropertyFileKind
+  fileName     String
+  originalName String
+  mimeType     String
+  size         Int
+  createdAt    DateTime         @default(now())
+
+  @@index([propertyId])
+}
+
+model PropertyStatusLog {
+  id         String          @id @default(uuid())
+  propertyId String
+  property   Property        @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  fromStatus PropertyStatus?
+  toStatus   PropertyStatus
+  actorId    String
+  note       String?
+  createdAt  DateTime        @default(now())
+
+  @@index([propertyId])
 }

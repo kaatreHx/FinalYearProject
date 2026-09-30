@@ -58,3 +58,66 @@ export function sanitizeKycInput(data: KycInput) {
         zip,
     };
 }
+// ---------------------------------------------------------------------------
+// Property listing validation
+// ---------------------------------------------------------------------------
+import type { PropertyInput } from '../types/property';
+import { AppError } from './errors';
+
+const PROPERTY_TYPES = ['HOUSE', 'APARTMENT', 'LAND', 'COMMERCIAL'];
+const MONEY_REGEX = /^\d{1,16}(\.\d{1,2})?$/;
+export const WALLET_REGEX = /^0x[a-fA-F0-9]{40}$/;
+
+function requiredText(value: unknown, label: string, min: number, max: number) {
+    const v = typeof value === 'string' ? value.trim() : '';
+    if (v.length < min) throw new AppError(400, `${label} is required${min > 1 ? ` (min ${min} characters)` : ''}`);
+    if (v.length > max) throw new AppError(400, `${label} must be at most ${max} characters`);
+    return v;
+}
+
+function optionalCount(value: unknown, label: string) {
+    if (value === undefined || value === null || value === '') return undefined;
+    const n = Number(value);
+    if (!Number.isInteger(n) || n < 0 || n > 100) throw new AppError(400, `${label} must be a whole number between 0 and 100`);
+    return n;
+}
+
+export function sanitizePropertyInput(data: PropertyInput) {
+    const title = requiredText(data.title, 'Title', 3, 150);
+    const description = requiredText(data.description, 'Description', 10, 5000);
+    const street = requiredText(data.street, 'Street', 1, 200);
+    const city = requiredText(data.city, 'City', 1, 100);
+    const zip = requiredText(data.zip, 'Zip', 1, 20);
+    const landRegistrationNumber = requiredText(data.landRegistrationNumber, 'Land registration number', 3, 100);
+
+    if (!PROPERTY_TYPES.includes(data.propertyType)) {
+        throw new AppError(400, `propertyType must be one of: ${PROPERTY_TYPES.join(', ')}`);
+    }
+
+    const price = String(data.price ?? '').trim();
+    if (!MONEY_REGEX.test(price) || Number(price) <= 0) throw new AppError(400, 'Price must be a positive amount (max 2 decimals)');
+
+    const areaSqFt = Number(data.areaSqFt);
+    if (!Number.isFinite(areaSqFt) || areaSqFt <= 0) throw new AppError(400, 'areaSqFt must be a positive number');
+
+    let ownerWalletAddress: string | undefined;
+    if (data.ownerWalletAddress !== undefined && String(data.ownerWalletAddress).trim() !== '') {
+        ownerWalletAddress = String(data.ownerWalletAddress).trim();
+        if (!WALLET_REGEX.test(ownerWalletAddress)) throw new AppError(400, 'ownerWalletAddress must be a valid 0x wallet address');
+    }
+
+    return {
+        title,
+        description,
+        propertyType: data.propertyType,
+        price,
+        areaSqFt,
+        bedrooms: optionalCount(data.bedrooms, 'bedrooms'),
+        bathrooms: optionalCount(data.bathrooms, 'bathrooms'),
+        street,
+        city,
+        zip,
+        landRegistrationNumber,
+        ownerWalletAddress,
+    };
+}

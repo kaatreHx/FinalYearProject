@@ -1,8 +1,12 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import DashboardNav from "@/components/property/DashboardNav";
 import SellerSubNav from "@/components/seller/SellerSubNav";
 import GrowthBarChart from "@/components/seller/GrowthBarChart";
-import { CURRENT_SELLER_ID, MOCK_PROPERTIES, formatPrice } from "@/lib/properties";
+import { fetchMyProperties, formatPrice } from "@/lib/properties";
+import type { Property } from "@/types/property";
 import { MOCK_PURCHASE_REQUESTS, formatRequestDate } from "@/lib/purchaseRequests";
 import {
   getPropertiesAddedSeries,
@@ -13,7 +17,17 @@ import {
 import styles from "./page.module.css";
 
 export default function SellerGrowthPage() {
-  const summary = getSellerSummary(CURRENT_SELLER_ID, MOCK_PROPERTIES, MOCK_PURCHASE_REQUESTS);
+  const [myProperties, setMyProperties] = useState<Property[]>([]);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchMyProperties()
+      .then(setMyProperties)
+      .catch((err) => setLoadError(err instanceof Error ? err.message : "Couldn't load your listings."));
+  }, []);
+
+  // Purchase requests don't have a backend endpoint yet, so they stay mocked.
+  const summary = getSellerSummary(myProperties, MOCK_PURCHASE_REQUESTS);
 
   const propertiesAddedSeries = getPropertiesAddedSeries(summary.myProperties);
   const salesCountSeries = getSalesCountSeries(summary.myProperties, MOCK_PURCHASE_REQUESTS);
@@ -29,7 +43,7 @@ export default function SellerGrowthPage() {
 
   return (
     <div className={styles.page}>
-      <DashboardNav userName="Asha Gurung" hideCart />
+      <DashboardNav hideCart />
       <SellerSubNav />
 
       <div className={styles.body}>
@@ -39,6 +53,8 @@ export default function SellerGrowthPage() {
             How your listings and sales have moved over the last 6 months.
           </p>
         </div>
+
+        {loadError && <p className={styles.subheading}>{loadError}</p>}
 
         <div className={styles.statGrid}>
           <div className={styles.statCard}>

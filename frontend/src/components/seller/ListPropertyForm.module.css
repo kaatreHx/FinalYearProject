@@ -315,3 +315,33 @@
     flex-direction: column;
   }
 }
+
+.textareaField { margin-bottom: 20px; }
+
+.textarea {
+  width: 100%;
+  resize: vertical;
+  border: 1.5px solid #d8d2c4;
+  border-radius: 4px;
+  background: transparent;
+  padding: 10px 12px;
+  font-family: var(--font-body);
+  font-size: 15px;
+  color: var(--charcoal);
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.textarea:focus { border-color: var(--brass); }
+
+.fieldError { margin: 6px 0 0 0; font-size: 12.5px; color: var(--error); }
+
+.docsGap { height: 8px; }
+
+.submitError {
+  margin: 0 0 12px 0;
+  font-size: 13px;
+  color: var(--error);
+}
+
+.submitError a { color: inherit; text-decoration: underline; }

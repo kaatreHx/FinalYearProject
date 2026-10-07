@@ -2,36 +2,13 @@
 
 import { useEffect, useRef, useState } from "react";
 import { loadLeaflet } from "@/lib/leaflet";
+import { searchPlaces, type SearchResult } from "@/lib/geocode";
 import styles from "./LocationPicker.module.css";
 
 interface LocationPickerProps {
   latitude: number;
   longitude: number;
   onChange: (latitude: number, longitude: number) => void;
-}
-
-interface SearchResult {
-  label: string;
-  lat: number;
-  lon: number;
-}
-
-// Free geocoding via OpenStreetMap's Nominatim — no API key needed.
-// In production this should go through your own backend so you can
-// cache results and respect Nominatim's usage policy (max ~1 req/sec).
-async function searchPlaces(query: string): Promise<SearchResult[]> {
-  const res = await fetch(
-    `https://nominatim.openstreetmap.org/search?format=json&limit=5&q=${encodeURIComponent(
-      query
-    )}`
-  );
-  if (!res.ok) throw new Error("search failed");
-  const data: Array<{ display_name: string; lat: string; lon: string }> = await res.json();
-  return data.map((item) => ({
-    label: item.display_name,
-    lat: parseFloat(item.lat),
-    lon: parseFloat(item.lon),
-  }));
 }
 
 export default function LocationPicker({

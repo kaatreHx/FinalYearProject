@@ -1,7 +1,7 @@
 "use client";
 
 import type { Property } from "@/types/property";
-import { formatPrice } from "@/lib/properties";
+import { formatAddress, formatPrice, propertyImage } from "@/lib/properties";
 import { useCart } from "@/context/CartContext";
 import styles from "./CartLineItem.module.css";
 
@@ -16,7 +16,7 @@ export default function CartLineItem({ property }: CartLineItemProps) {
     <div className={styles.row}>
       <img
         className={styles.thumb}
-        src={`https://picsum.photos/seed/${property.imageSeed}/200/150`}
+        src={propertyImage(property, 0, 200, 150) ?? undefined}
         alt={property.title}
       />
 
@@ -25,9 +25,7 @@ export default function CartLineItem({ property }: CartLineItemProps) {
           <h3 className={styles.title}>{property.title}</h3>
           <span className={styles.plotRef}>{property.plotRef}</span>
         </div>
-        <p className={styles.address}>
-          {property.address}, {property.city}
-        </p>
+        <p className={styles.address}>{formatAddress(property)}</p>
         <div className={styles.statLine}>
           {property.beds > 0 && <span>{property.beds} BD</span>}
           {property.baths > 0 && <span>{property.baths} BA</span>}

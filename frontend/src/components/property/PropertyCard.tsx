@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import type { Property } from "@/types/property";
-import { formatPrice } from "@/lib/properties";
+import { formatAddress, formatPrice, propertyImage } from "@/lib/properties";
 import { useCart } from "@/context/CartContext";
 import styles from "./PropertyCard.module.css";
 
@@ -20,7 +20,7 @@ export default function PropertyCard({ property }: PropertyCardProps) {
         <div className={styles.imageWrap}>
           <img
             className={styles.image}
-            src={`https://picsum.photos/seed/${property.imageSeed}/640/440`}
+            src={propertyImage(property, 0, 640, 440) ?? undefined}
             alt={property.title}
             loading="lazy"
           />
@@ -72,8 +72,12 @@ export default function PropertyCard({ property }: PropertyCardProps) {
           </div>
 
           <h3 className={styles.title}>{property.title}</h3>
-          <p className={styles.address}>
-            {property.address}, {property.city}
+          <p className={styles.address}>{formatAddress(property)}</p>
+
+          <p className={styles.verifyLine}>
+            {property.verificationStatus === "MINTED"
+              ? `✓ Government verified · NFT${property.tokenId ? ` #${property.tokenId}` : ""}`
+              : "✓ Government verified"}
           </p>
 
           <div className={styles.statLine}>

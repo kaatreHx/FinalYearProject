@@ -99,3 +99,10 @@
   align-items: center;
   justify-content: center;
 }
+
+.statusTag[data-status="PENDING"] { background: var(--brass-dim); }
+.statusTag[data-status="DISPATCHED"] { background: var(--line-blue); }
+.statusTag[data-status="VERIFIED"] { background: var(--sage); }
+.statusTag[data-status="REJECTED"] { background: var(--error); }
+.statusTag[data-status="MINTING"] { background: var(--brass); }
+.statusTag[data-status="MINTED"] { background: var(--ink-navy); }

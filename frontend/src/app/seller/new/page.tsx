@@ -6,15 +6,16 @@ import styles from "./page.module.css";
 export default function NewListingPage() {
   return (
     <div className={styles.page}>
-      <DashboardNav userName="Asha Gurung" hideCart />
+      <DashboardNav hideCart />
       <SellerSubNav />
 
       <div className={styles.body}>
         <div className={styles.header}>
           <h1 className={styles.heading}>List a property</h1>
           <p className={styles.subheading}>
-            Add the details below and your listing goes live for buyers to
-            browse and send purchase requests.
+            Add the details, photos and ownership documents below. The
+            government verifies your ownership first, then your listing goes
+            live for buyers — and you can mint it as an NFT.
           </p>
         </div>
 

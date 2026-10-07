@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
@@ -8,77 +8,71 @@ import LocationPicker from "@/components/seller/LocationPicker";
 import DocumentUploader, {
   type UploadedDoc,
 } from "@/components/shared/DocumentUploader";
+import PhotoUploader from "@/components/shared/PhotoUploader";
+import { ApiError } from "@/lib/http";
+import { reverseGeocode } from "@/lib/geocode";
 import {
-  CURRENT_SELLER_ID,
-  CURRENT_SELLER_NAME,
   DEFAULT_MAP_CENTER,
-  createDraftProperty,
+  PROPERTY_DOCUMENT_OPTIONS,
+  createProperty,
   formatPrice,
+  tagDocumentFile,
 } from "@/lib/properties";
-import type { ListingStatus, PropertyType } from "@/types/property";
+import type { PropertyType } from "@/types/property";
 import styles from "./ListPropertyForm.module.css";
 
-const PROPERTY_DOCUMENT_OPTIONS = [
-  { value: "ownership_deed", label: "Ownership deed / lalpurja" },
-  { value: "land_survey", label: "Land survey / naksa" },
-  { value: "tax_clearance", label: "Tax clearance certificate" },
-  { value: "other", label: "Other" },
-];
-
-const PROPERTY_TYPES: PropertyType[] = [
-  "House",
-  "Apartment",
-  "Land",
-  "Commercial",
-];
-
-const STATUS_OPTIONS: ListingStatus[] = ["For Sale", "For Rent"];
+const PROPERTY_TYPES: PropertyType[] = ["House", "Apartment", "Land", "Commercial"];
 
 type StepId = "details" | "location" | "documents";
 
 const STEPS: { id: StepId; label: string }[] = [
   { id: "details", label: "Property details" },
   { id: "location", label: "Location" },
-  { id: "documents", label: "Documents" },
+  { id: "documents", label: "Photos & documents" },
 ];
 
 const DETAIL_FIELDS = [
   "title",
+  "description",
   "address",
   "city",
+  "zip",
+  "landRegistrationNumber",
   "price",
   "areaSqm",
   "beds",
   "baths",
-  "parking",
 ] as const;
 
 interface FormState {
   title: string;
+  description: string;
   address: string;
   city: string;
+  zip: string;
+  landRegistrationNumber: string;
   price: string;
   beds: string;
   baths: string;
-  parking: string;
   areaSqm: string;
   type: PropertyType;
-  status: ListingStatus;
+  // Map pin only; the backend stores the address, not coordinates.
   latitude: number;
   longitude: number;
 }
 
 const INITIAL_STATE: FormState = {
   title: "",
+  description: "",
   address: "",
   city: "",
+  zip: "",
+  landRegistrationNumber: "",
   price: "",
   beds: "",
   baths: "",
-  parking: "",
   areaSqm: "",
   type: "Apartment",
-  status: "For Sale",
   latitude: DEFAULT_MAP_CENTER.latitude,
   longitude: DEFAULT_MAP_CENTER.longitude,
 };
@@ -89,13 +83,22 @@ function computeErrors(form: FormState): FormErrors {
   const isLand = form.type === "Land";
   const nextErrors: FormErrors = {};
 
-  if (!form.title.trim()) nextErrors.title = "Give your listing a title.";
+  if (form.title.trim().length < 3) nextErrors.title = "Give your listing a title (3+ characters).";
+  if (form.description.trim().length < 10) {
+    nextErrors.description = "Describe the property in a sentence or two (10+ characters).";
+  }
   if (!form.address.trim()) nextErrors.address = "Street address is required.";
   if (!form.city.trim()) nextErrors.city = "City is required.";
+  if (!form.zip.trim()) nextErrors.zip = "Postal code is required.";
+  if (form.landRegistrationNumber.trim().length < 3) {
+    nextErrors.landRegistrationNumber = "Enter the land registration number from your ownership deed.";
+  }
 
   const price = Number(form.price);
   if (!form.price.trim() || Number.isNaN(price) || price <= 0) {
     nextErrors.price = "Enter a valid price.";
+  } else if (!/^\d{1,16}(\.\d{1,2})?$/.test(form.price.trim())) {
+    nextErrors.price = "Use at most 2 decimal places.";
   }
 
   const areaSqm = Number(form.areaSqm);
@@ -104,14 +107,11 @@ function computeErrors(form: FormState): FormErrors {
   }
 
   if (!isLand) {
-    if (form.beds.trim() && Number.isNaN(Number(form.beds))) {
-      nextErrors.beds = "Beds must be a number.";
-    }
-    if (form.baths.trim() && Number.isNaN(Number(form.baths))) {
-      nextErrors.baths = "Baths must be a number.";
-    }
-    if (form.parking.trim() && Number.isNaN(Number(form.parking))) {
-      nextErrors.parking = "Parking must be a number.";
+    for (const key of ["beds", "baths"] as const) {
+      const v = form[key].trim();
+      if (v && (!Number.isInteger(Number(v)) || Number(v) < 0 || Number(v) > 100)) {
+        nextErrors[key] = "Enter a whole number.";
+      }
     }
   }
 
@@ -121,17 +121,27 @@ function computeErrors(form: FormState): FormErrors {
 export default function ListPropertyForm() {
   const [activeStep, setActiveStep] = useState<StepId>("details");
   const [form, setForm] = useState<FormState>(INITIAL_STATE);
+  const [photos, setPhotos] = useState<File[]>([]);
   const [documents, setDocuments] = useState<UploadedDoc[]>([]);
   const [errors, setErrors] = useState<FormErrors>({});
   const [attemptedSubmit, setAttemptedSubmit] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<{ message: string; status: number } | null>(null);
   const [submitted, setSubmitted] = useState<null | {
     title: string;
     priceLabel: string;
+    photoCount: number;
     documentCount: number;
   }>(null);
 
   const isLand = form.type === "Land";
+
+  const photoError =
+    attemptedSubmit && photos.length === 0 ? "Add at least one photo of the property." : undefined;
+  const documentError =
+    attemptedSubmit && documents.length === 0
+      ? "Add at least one ownership document — the government needs it to verify your listing."
+      : undefined;
 
   // Once the seller has tried to submit at least once, keep error
   // state (and the red section indicators) live as they fix fields.
@@ -146,11 +156,42 @@ export default function ListPropertyForm() {
   const stepHasError: Record<StepId, boolean> = {
     details: attemptedSubmit && detailsHaveError,
     location: false,
-    documents: false,
+    documents: Boolean(photoError || documentError),
   };
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
+  }
+
+  // --- Map pin -> address -------------------------------------------------
+  // The backend stores street/city/zip rather than coordinates, so when the
+  // seller moves the pin we reverse-geocode it into those fields. Fields the
+  // seller typed themselves are never overwritten.
+  const lastAuto = useRef({ address: "", city: "", zip: "" });
+  const geoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => {
+    if (geoTimer.current) clearTimeout(geoTimer.current);
+  }, []);
+
+  function handleLocationChange(latitude: number, longitude: number) {
+    setForm((prev) => ({ ...prev, latitude, longitude }));
+    if (geoTimer.current) clearTimeout(geoTimer.current);
+    geoTimer.current = setTimeout(async () => {
+      const place = await reverseGeocode(latitude, longitude).catch(() => null);
+      if (!place) return;
+      setForm((prev) => {
+        const next = { ...prev };
+        const found = { address: place.street, city: place.city, zip: place.zip };
+        for (const key of ["address", "city", "zip"] as const) {
+          const value = found[key];
+          if (value && (prev[key].trim() === "" || prev[key] === lastAuto.current[key])) {
+            next[key] = value;
+            lastAuto.current[key] = value;
+          }
+        }
+        return next;
+      });
+    }, 800);
   }
 
   function goTo(step: StepId) {
@@ -172,54 +213,61 @@ export default function ListPropertyForm() {
     const nextErrors = computeErrors(form);
     setErrors(nextErrors);
 
-    if (Object.keys(nextErrors).length > 0) {
-      const hasDetailError = DETAIL_FIELDS.some((field) => nextErrors[field]);
-      if (hasDetailError) setActiveStep("details");
+    const hasDetailError = DETAIL_FIELDS.some((field) => nextErrors[field]);
+    if (hasDetailError) {
+      setActiveStep("details");
+      return false;
     }
-
-    return Object.keys(nextErrors).length === 0;
+    if (photos.length === 0 || documents.length === 0) {
+      setActiveStep("documents");
+      return false;
+    }
+    return true;
   }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    setSubmitError(null);
     if (!validate()) return;
 
     setIsSubmitting(true);
     try {
-      const draft = createDraftProperty(
+      const created = await createProperty(
         {
           title: form.title.trim(),
+          description: form.description.trim(),
+          type: form.type,
+          price: Number(form.price),
+          areaSqm: Number(form.areaSqm),
+          beds: isLand || !form.beds.trim() ? null : Number(form.beds),
+          baths: isLand || !form.baths.trim() ? null : Number(form.baths),
           address: form.address.trim(),
           city: form.city.trim(),
-          price: Number(form.price),
-          status: form.status,
-          type: form.type,
-          beds: isLand || !form.beds.trim() ? 0 : Number(form.beds),
-          baths: isLand || !form.baths.trim() ? 0 : Number(form.baths),
-          parking: isLand || !form.parking.trim() ? 0 : Number(form.parking),
-          areaSqm: Number(form.areaSqm),
-          latitude: form.latitude,
-          longitude: form.longitude,
+          zip: form.zip.trim(),
+          landRegistrationNumber: form.landRegistrationNumber.trim(),
         },
-        CURRENT_SELLER_ID,
-        CURRENT_SELLER_NAME
+        photos,
+        documents.map((doc) => tagDocumentFile(doc.file, doc.type))
       );
 
-      // Mocked — no create-listing or document-upload endpoint exists yet,
-      // see lib/properties.ts::createDraftProperty for where the real
-      // POST call (multipart, including `documents`) would go.
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
       setSubmitted({
-        title: draft.title,
-        priceLabel: formatPrice(draft.price, draft.status),
+        title: created.title,
+        priceLabel: formatPrice(created.price, created.status),
+        photoCount: photos.length,
         documentCount: documents.length,
       });
       setForm(INITIAL_STATE);
+      setPhotos([]);
       setDocuments([]);
       setErrors({});
       setAttemptedSubmit(false);
       setActiveStep("details");
+      lastAuto.current = { address: "", city: "", zip: "" };
+    } catch (err) {
+      setSubmitError({
+        message: err instanceof Error ? err.message : "Couldn't submit your listing. Try again.",
+        status: err instanceof ApiError ? err.status : 0,
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -229,17 +277,17 @@ export default function ListPropertyForm() {
     return (
       <div className={styles.successCard}>
         <span className={styles.successIcon}>✓</span>
-        <h2 className={styles.successTitle}>Listing created</h2>
+        <h2 className={styles.successTitle}>Listing submitted</h2>
         <p className={styles.successBody}>
-          <strong>{submitted.title}</strong> ({submitted.priceLabel}) is now
-          live{submitted.documentCount > 0
-            ? ` with ${submitted.documentCount} document${submitted.documentCount !== 1 ? "s" : ""} attached`
-            : ""}. Buyers can start sending purchase requests — you&apos;ll
-          see them on your listings page.
+          <strong>{submitted.title}</strong> ({submitted.priceLabel}) is now{" "}
+          <strong>pending government verification</strong>, with {submitted.photoCount} photo
+          {submitted.photoCount !== 1 ? "s" : ""} and {submitted.documentCount} document
+          {submitted.documentCount !== 1 ? "s" : ""} attached. It goes live for buyers once the
+          government confirms your ownership — track progress on your listings page.
         </p>
         <div className={styles.successActions}>
           <Link href="/seller/listings" className={styles.primaryLink}>
-            View purchase requests
+            Track verification
           </Link>
           <button
             type="button"
@@ -300,6 +348,21 @@ export default function ListPropertyForm() {
                 required
               />
 
+              <div className={styles.textareaField}>
+                <label className={styles.selectLabel} htmlFor="description">
+                  Description
+                </label>
+                <textarea
+                  id="description"
+                  className={styles.textarea}
+                  rows={4}
+                  placeholder="Light-filled corner unit with river views, close to transit…"
+                  value={form.description}
+                  onChange={(e) => update("description", e.target.value)}
+                />
+                {errors.description && <p className={styles.fieldError}>{errors.description}</p>}
+              </div>
+
               <div className={styles.row}>
                 <Input
                   label="Street address"
@@ -315,6 +378,25 @@ export default function ListPropertyForm() {
                   value={form.city}
                   onChange={(e) => update("city", e.target.value)}
                   error={errors.city}
+                  required
+                />
+              </div>
+
+              <div className={styles.row}>
+                <Input
+                  label="Postal code"
+                  placeholder="44600"
+                  value={form.zip}
+                  onChange={(e) => update("zip", e.target.value)}
+                  error={errors.zip}
+                  required
+                />
+                <Input
+                  label="Land registration number"
+                  placeholder="As written on your lalpurja"
+                  value={form.landRegistrationNumber}
+                  onChange={(e) => update("landRegistrationNumber", e.target.value)}
+                  error={errors.landRegistrationNumber}
                   required
                 />
               </div>
@@ -338,36 +420,19 @@ export default function ListPropertyForm() {
                   </select>
                 </div>
 
-                <div className={styles.selectField}>
-                  <label className={styles.selectLabel} htmlFor="status">
-                    Listing status
-                  </label>
-                  <select
-                    id="status"
-                    className={styles.select}
-                    value={form.status}
-                    onChange={(e) => update("status", e.target.value as ListingStatus)}
-                  >
-                    {STATUS_OPTIONS.map((status) => (
-                      <option key={status} value={status}>
-                        {status}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className={styles.row}>
                 <Input
-                  label={form.status === "For Rent" ? "Monthly rent (USD)" : "Price (USD)"}
+                  label="Price (USD)"
                   type="number"
-                  inputMode="numeric"
+                  inputMode="decimal"
                   placeholder="185000"
                   value={form.price}
                   onChange={(e) => update("price", e.target.value)}
                   error={errors.price}
                   required
                 />
+              </div>
+
+              <div className={styles.row}>
                 <Input
                   label="Floor area (m²)"
                   type="number"
@@ -378,10 +443,7 @@ export default function ListPropertyForm() {
                   error={errors.areaSqm}
                   required
                 />
-              </div>
-
-              {!isLand && (
-                <div className={styles.row}>
+                {!isLand && (
                   <Input
                     label="Bedrooms"
                     type="number"
@@ -391,6 +453,11 @@ export default function ListPropertyForm() {
                     onChange={(e) => update("beds", e.target.value)}
                     error={errors.beds}
                   />
+                )}
+              </div>
+
+              {!isLand && (
+                <div className={styles.row}>
                   <Input
                     label="Bathrooms"
                     type="number"
@@ -402,20 +469,6 @@ export default function ListPropertyForm() {
                   />
                 </div>
               )}
-
-              {!isLand && (
-                <div className={styles.row}>
-                  <Input
-                    label="Parking spaces"
-                    type="number"
-                    inputMode="numeric"
-                    placeholder="1"
-                    value={form.parking}
-                    onChange={(e) => update("parking", e.target.value)}
-                    error={errors.parking}
-                  />
-                </div>
-              )}
             </div>
           )}
 
@@ -423,31 +476,51 @@ export default function ListPropertyForm() {
             <div role="tabpanel">
               <h2 className={styles.sectionTitle}>Location</h2>
               <p className={styles.sectionDescription}>
-                Search for the address, or click and drag the pin on the
-                map for the exact spot.
+                Search for the address, or click and drag the pin on the map.
+                We&apos;ll fill in any empty street, city and postal-code fields from
+                the pin — double-check them on the first step.
               </p>
               <LocationPicker
                 latitude={form.latitude}
                 longitude={form.longitude}
-                onChange={(latitude, longitude) =>
-                  setForm((prev) => ({ ...prev, latitude, longitude }))
-                }
+                onChange={handleLocationChange}
               />
             </div>
           )}
 
           {activeStep === "documents" && (
             <div role="tabpanel">
+              <PhotoUploader
+                title="Photos"
+                description="Up to 10 photos — the first one is the cover. JPG, PNG, or WEBP, under 10MB each."
+                files={photos}
+                onChange={setPhotos}
+                error={photoError}
+              />
+
               <DocumentUploader
-                title="Supporting documents"
-                description="Add ownership proof and other paperwork buyers may ask for — ownership deed, land survey, or a tax clearance certificate. PDF, JPG, or PNG, under 10MB each."
+                title="Ownership documents"
+                description="Required for government verification — ownership deed (lalpurja), land survey (naksa), or a tax clearance certificate. PDF, JPG, or PNG, under 10MB each. These stay private: only you and the verifying officer can open them."
                 options={PROPERTY_DOCUMENT_OPTIONS}
                 documents={documents}
                 onChange={setDocuments}
               />
+              {documentError && <p className={styles.fieldError}>{documentError}</p>}
             </div>
           )}
         </div>
+
+        {submitError && (
+          <p className={styles.submitError}>
+            {submitError.message}
+            {submitError.status === 403 && (
+              <>
+                {" "}
+                <Link href="/profile">Go to your profile</Link>
+              </>
+            )}
+          </p>
+        )}
 
         <div className={styles.stepActions}>
           {activeIndex > 0 && (
@@ -463,7 +536,7 @@ export default function ListPropertyForm() {
             )}
             {isLastStep && (
               <Button type="submit" isLoading={isSubmitting}>
-                List property
+                Submit for verification
               </Button>
             )}
           </div>

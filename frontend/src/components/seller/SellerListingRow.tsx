@@ -1,7 +1,7 @@
 "use client";
 
 import type { Property } from "@/types/property";
-import { formatPrice } from "@/lib/properties";
+import { STATUS_LABEL, formatAddress, formatPrice, propertyImage } from "@/lib/properties";
 import styles from "./SellerListingRow.module.css";
 
 interface SellerListingRowProps {
@@ -26,7 +26,7 @@ export default function SellerListingRow({
     >
       <img
         className={styles.thumb}
-        src={`https://picsum.photos/seed/${property.imageSeed}/160/120`}
+        src={propertyImage(property, 0, 160, 120) ?? undefined}
         alt=""
         loading="lazy"
       />
@@ -34,13 +34,11 @@ export default function SellerListingRow({
       <div className={styles.info}>
         <div className={styles.topLine}>
           <span className={styles.title}>{property.title}</span>
-          <span className={styles.statusTag} data-status={property.status}>
-            {property.status}
+          <span className={styles.statusTag} data-status={property.verificationStatus}>
+            {STATUS_LABEL[property.verificationStatus]}
           </span>
         </div>
-        <p className={styles.address}>
-          {property.address}, {property.city}
-        </p>
+        <p className={styles.address}>{formatAddress(property)}</p>
         <span className={styles.price}>
           {formatPrice(property.price, property.status)}
         </span>

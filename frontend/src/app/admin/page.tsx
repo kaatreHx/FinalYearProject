@@ -1,84 +1,71 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import StatCard from "@/components/admin/StatCard";
 import tableStyles from "@/components/admin/AdminTable.module.css";
-import { MOCK_PROPERTIES } from "@/lib/properties";
-import {
-  MOCK_PURCHASE_REQUESTS,
-  formatRequestDate,
-} from "@/lib/purchaseRequests";
-// import { MOCK_USERS } from "@/lib/users";
-import { MOCK_KYC_APPLICATIONS } from "@/lib/kycApplications";
+import { fetchReviewQueue } from "@/lib/government";
+import { MOCK_PURCHASE_REQUESTS, formatRequestDate } from "@/lib/purchaseRequests";
+import type { Property, VerificationStatus } from "@/types/property";
 import styles from "./page.module.css";
 
+const STATUSES: VerificationStatus[] = ["PENDING", "DISPATCHED", "VERIFIED", "MINTED", "REJECTED"];
+
 export default function AdminOverviewPage() {
-  const totalListings = MOCK_PROPERTIES.length;
-  const forSale = MOCK_PROPERTIES.filter((p) => p.status === "For Sale").length;
-  const forRent = MOCK_PROPERTIES.filter((p) => p.status === "For Rent").length;
+  const [byStatus, setByStatus] = useState<Record<VerificationStatus, Property[]> | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
-  const totalRequests = MOCK_PURCHASE_REQUESTS.length;
-  const pending = MOCK_PURCHASE_REQUESTS.filter((r) => r.status === "Pending").length;
-  const accepted = MOCK_PURCHASE_REQUESTS.filter((r) => r.status === "Accepted").length;
-  const declined = MOCK_PURCHASE_REQUESTS.filter((r) => r.status === "Declined").length;
+  useEffect(() => {
+    Promise.all(STATUSES.map((s) => fetchReviewQueue(s)))
+      .then((lists) =>
+        setByStatus(
+          Object.fromEntries(STATUSES.map((s, i) => [s, lists[i]])) as Record<VerificationStatus, Property[]>
+        )
+      )
+      .catch((err) => setLoadError(err instanceof Error ? err.message : "Couldn't load property stats."));
+  }, []);
 
-  // const totalSellers = MOCK_USERS.filter((u) => u.role === "seller").length;
-  // const totalBuyers = MOCK_USERS.filter((u) => u.role === "buyer").length;
+  const count = (s: VerificationStatus) => (byStatus ? byStatus[s].length : "—");
 
-  const pendingKyc = MOCK_KYC_APPLICATIONS.filter((a) => a.status === "pending").length;
-
-  const listedValue = MOCK_PROPERTIES.filter((p) => p.status === "For Sale").reduce(
-    (sum, p) => sum + p.price,
-    0
-  );
+  const liveListings = byStatus ? [...byStatus.VERIFIED, ...byStatus.MINTED] : [];
   const listedValueLabel = new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
     maximumFractionDigits: 0,
     notation: "compact",
-  }).format(listedValue);
+  }).format(liveListings.reduce((sum, p) => sum + p.price, 0));
 
+  // Purchase requests are still mocked (no backend endpoint yet).
+  const totalRequests = MOCK_PURCHASE_REQUESTS.length;
+  const pending = MOCK_PURCHASE_REQUESTS.filter((r) => r.status === "Pending").length;
+
+  const allProperties = byStatus ? STATUSES.flatMap((s) => byStatus[s]) : [];
   const recentRequests = [...MOCK_PURCHASE_REQUESTS]
     .sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime())
     .slice(0, 5)
     .map((request) => ({
       ...request,
-      property: MOCK_PROPERTIES.find((p) => p.id === request.propertyId),
+      property: allProperties.find((p) => p.id === request.propertyId),
     }));
 
   return (
     <div>
       <AdminPageHeader
         title="Overview"
-        description="A system-wide snapshot of listings, requests, and users."
+        description="A snapshot of property verification and buyer activity."
       />
 
+      {loadError && <p className={tableStyles.emptyState}>{loadError}</p>}
+
       <div className={styles.statGrid}>
-        <StatCard
-          label="Listings"
-          value={totalListings}
-          sublabel={`${forSale} for sale · ${forRent} for rent`}
-        />
-        <StatCard
-          label="Purchase requests"
-          value={totalRequests}
-          sublabel={`${pending} pending`}
-        />
-        <StatCard
-          label="Requests resolved"
-          value={accepted + declined}
-          sublabel={`${accepted} accepted · ${declined} declined`}
-        />
-        <StatCard
-          label="Users"
-        // value={MOCK_USERS.length}
-        // sublabel={`${totalSellers} sellers · ${totalBuyers} buyers`}
-        />
-        <StatCard
-          label="KYC review"
-          value={pendingKyc}
-          sublabel="applications pending"
-        />
-        <StatCard label="Listed value (for sale)" value={listedValueLabel} />
+        <StatCard label="Awaiting review" value={count("PENDING")} sublabel="submitted by sellers" />
+        <StatCard label="With government" value={count("DISPATCHED")} sublabel="being verified" />
+        <StatCard label="Verified" value={count("VERIFIED")} sublabel="ready to mint" />
+        <StatCard label="NFTs minted" value={count("MINTED")} />
+        <StatCard label="Rejected" value={count("REJECTED")} />
+        <StatCard label="Live listed value" value={byStatus ? listedValueLabel : "—"} sublabel="verified + minted" />
+        <StatCard label="Purchase requests" value={totalRequests} sublabel={`${pending} pending`} />
       </div>
 
       <div className={styles.sectionHeader}>
@@ -105,10 +92,7 @@ export default function AdminOverviewPage() {
                 <td>{request.buyerName}</td>
                 <td>
                   {request.property ? (
-                    <Link
-                      href={`/property/${request.property.id}`}
-                      className={tableStyles.rowLink}
-                    >
+                    <Link href={`/property/${request.property.id}`} className={tableStyles.rowLink}>
                       {request.property.title}
                     </Link>
                   ) : (
@@ -118,23 +102,18 @@ export default function AdminOverviewPage() {
                 <td>
                   {request.offerPrice !== null
                     ? new Intl.NumberFormat("en-US", {
-                      style: "currency",
-                      currency: "USD",
-                      maximumFractionDigits: 0,
-                    }).format(request.offerPrice)
+                        style: "currency",
+                        currency: "USD",
+                        maximumFractionDigits: 0,
+                      }).format(request.offerPrice)
                     : "—"}
                 </td>
                 <td>
-                  <span
-                    className={tableStyles.tag}
-                    data-tone={request.status.toLowerCase()}
-                  >
+                  <span className={tableStyles.tag} data-tone={request.status.toLowerCase()}>
                     {request.status}
                   </span>
                 </td>
-                <td className={tableStyles.muted}>
-                  {formatRequestDate(request.submittedAt)}
-                </td>
+                <td className={tableStyles.muted}>{formatRequestDate(request.submittedAt)}</td>
               </tr>
             ))}
           </tbody>

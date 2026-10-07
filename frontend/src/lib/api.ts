@@ -18,7 +18,7 @@ async function request<T>(path: string, body: unknown): Promise<T> {
   if (!res.ok) {
     const errorBody = await res.json().catch(() => null);
     throw new Error(
-      errorBody?.message ?? "Something went wrong. Please try again."
+      errorBody?.error ?? errorBody?.message ?? "Something went wrong. Please try again."
     );
   }
 

@@ -98,3 +98,53 @@
   text-decoration: none;
   border-bottom: 1px solid var(--brass-dim);
 }
+
+
+.walletBox {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: 16px;
+  background: var(--stone);
+  border: 1px solid var(--stone-dim);
+  border-radius: 6px;
+}
+
+.walletBox label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #8a8474;
+}
+
+.walletBox textarea {
+  width: 100%;
+  box-sizing: border-box;
+  resize: none;
+  border: 1px solid var(--stone-dim);
+  border-radius: 4px;
+  padding: 9px 11px;
+  background: var(--white);
+  color: var(--charcoal);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  word-break: break-all;
+}
+
+.walletWarning {
+  margin: 0 0 6px;
+  padding: 10px;
+  border-left: 3px solid var(--error);
+  background: var(--white);
+  color: var(--charcoal);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.walletHint {
+  margin: 3px 0 8px;
+  color: #6b6559;
+  font-size: 12px;
+  line-height: 1.5;
+}

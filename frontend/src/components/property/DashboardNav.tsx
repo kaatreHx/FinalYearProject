@@ -15,11 +15,12 @@ interface DashboardNavProps {
 export default function DashboardNav({
   query = "",
   onQueryChange,
-  userName = "Asha Gurung",
+  userName: userNameProp,
   hideCart = false,
 }: DashboardNavProps) {
   const { cartIds } = useCart();
   const [isAgent, setIsAgent] = useState(false);
+  const [storedName, setStoredName] = useState<string | null>(null);
 
   useEffect(() => {
     try {
@@ -28,11 +29,15 @@ export default function DashboardNav({
       if (data) {
         const parsed = JSON.parse(data);
         setIsAgent(!!parsed?.isAgent);
+        const full = `${parsed?.firstName ?? ""} ${parsed?.lastName ?? ""}`.trim();
+        if (full) setStoredName(full);
       }
     } catch {
       setIsAgent(false);
     }
   }, []);
+
+  const userName = userNameProp ?? storedName ?? "Account";
 
   const initials = userName
     .split(" ")

@@ -17,6 +17,10 @@ export default function RegisterForm() {
   const [isAgent, setIsAgent] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [walletCredentials, setWalletCredentials] = useState<{
+    address: string;
+    privateKey: string;
+  } | null>(null);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -35,15 +39,21 @@ export default function RegisterForm() {
     try {
       const response = await register({ firstName, lastName, email, password, isAgent });
 
-      localStorage.removeItem("token")
-      localStorage.removeItem("user")
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
 
-      if (response.token) {
+      if (response.token && response.user.walletAddress && response.walletPrivateKey) {
         localStorage.setItem("token", response.token);
         localStorage.setItem("user", JSON.stringify(response.user));
-        router.push("/dashboard");
+
+        // Deliberately keep the private key only in React state. It is shown once
+        // so the user can back it up, but it is not persisted in localStorage.
+        setWalletCredentials({
+          address: response.user.walletAddress,
+          privateKey: response.walletPrivateKey,
+        });
       } else {
-        setFormError("Registration failed. Please try again.");
+        setFormError("Account was created, but the blockchain wallet could not be created.");
       }
     } catch (err) {
       setFormError(
@@ -54,6 +64,40 @@ export default function RegisterForm() {
     } finally {
       setIsLoading(false);
     }
+  }
+
+  if (walletCredentials) {
+    return (
+      <div>
+        <h1 className={styles.heading}>Your blockchain wallet is ready</h1>
+        <p className={styles.subheading}>
+          Your account has been created. Back up the private key below before continuing.
+          Your property ownership will use this wallet automatically.
+        </p>
+
+        <div className={styles.walletBox}>
+          <p className={styles.walletWarning}>
+            ⚠️ Never share your private key with anyone. Anyone who has it can control this wallet.
+          </p>
+
+          <label>Wallet address</label>
+          <textarea readOnly value={walletCredentials.address} rows={2} />
+
+          <label>Private key</label>
+          <textarea readOnly value={walletCredentials.privateKey} rows={4} />
+
+          <p className={styles.walletHint}>
+            This key is shown only during registration and is not saved in browser localStorage.
+            Your backend also keeps an encrypted copy so it can perform authorized blockchain
+            operations for this custodial FYP design.
+          </p>
+
+          <Button type="button" onClick={() => router.push("/dashboard")}>
+            I have backed up my key — continue
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   return (

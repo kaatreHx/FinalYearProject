@@ -1,57 +1,69 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import DashboardNav from "@/components/property/DashboardNav";
 import SellerSubNav from "@/components/seller/SellerSubNav";
 import SellerListingRow from "@/components/seller/SellerListingRow";
 import PurchaseRequestCard from "@/components/seller/PurchaseRequestCard";
-import {
-  CURRENT_SELLER_ID,
-  MOCK_PROPERTIES,
-  formatPrice,
-  getPropertiesByOwner,
-} from "@/lib/properties";
+import VerificationPanel from "@/components/seller/VerificationPanel";
+import { fetchMyProperties, formatAddress, formatPrice, isPublicStatus } from "@/lib/properties";
 import {
   MOCK_PURCHASE_REQUESTS,
   countPendingRequests,
   getRequestsForProperty,
 } from "@/lib/purchaseRequests";
+import type { Property } from "@/types/property";
 import type { PurchaseRequest, PurchaseRequestStatus } from "@/types/purchase-request";
 import styles from "./page.module.css";
 
 export default function SellerListingsPage() {
-  const myListings = useMemo(
-    () => getPropertiesByOwner(MOCK_PROPERTIES, CURRENT_SELLER_ID),
-    []
-  );
+  const [myListings, setMyListings] = useState<Property[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
-  const [requests, setRequests] = useState<PurchaseRequest[]>(
-    MOCK_PURCHASE_REQUESTS
-  );
-  const [selectedId, setSelectedId] = useState<string | null>(
-    myListings[0]?.id ?? null
-  );
+  // Purchase requests don't have a backend endpoint yet, so they stay mocked.
+  const [requests, setRequests] = useState<PurchaseRequest[]>(MOCK_PURCHASE_REQUESTS);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  const selectedProperty =
-    myListings.find((property) => property.id === selectedId) ?? null;
+  useEffect(() => {
+    let cancelled = false;
+    fetchMyProperties()
+      .then((data) => {
+        if (cancelled) return;
+        setMyListings(data);
+        setSelectedId((current) => current ?? data[0]?.id ?? null);
+      })
+      .catch((err) => !cancelled && setLoadError(err instanceof Error ? err.message : "Couldn't load your listings."))
+      .finally(() => !cancelled && setIsLoading(false));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
-  const selectedRequests = selectedProperty
-    ? getRequestsForProperty(requests, selectedProperty.id)
-    : [];
+  const selectedProperty = myListings.find((property) => property.id === selectedId) ?? null;
+  const selectedRequests = selectedProperty ? getRequestsForProperty(requests, selectedProperty.id) : [];
+
+  function handleUpdated(updated: Property) {
+    setMyListings((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
+  }
+
+  function handleDeleted(id: string) {
+    setMyListings((prev) => {
+      const next = prev.filter((p) => p.id !== id);
+      setSelectedId(next[0]?.id ?? null);
+      return next;
+    });
+  }
 
   function updateStatus(requestId: string, status: PurchaseRequestStatus) {
-    // Replace with a real API call once the requests endpoint exists,
-    // e.g. POST `${API_BASE_URL}/requests/:id/status`
-    setRequests((prev) =>
-      prev.map((request) =>
-        request.id === requestId ? { ...request, status } : request
-      )
-    );
+    // Replace with a real API call once the requests endpoint exists.
+    setRequests((prev) => prev.map((r) => (r.id === requestId ? { ...r, status } : r)));
   }
 
   return (
     <div className={styles.page}>
-      <DashboardNav userName="Asha Gurung" hideCart />
+      <DashboardNav hideCart />
       <SellerSubNav />
 
       <div className={styles.body}>
@@ -63,9 +75,13 @@ export default function SellerListingsPage() {
             </span>
           </div>
 
-          {myListings.length === 0 ? (
+          {isLoading ? (
+            <p className={styles.emptyMuted}>Loading your listings…</p>
+          ) : loadError ? (
+            <p className={styles.emptyMuted}>{loadError}</p>
+          ) : myListings.length === 0 ? (
             <p className={styles.emptyMuted}>
-              You haven&apos;t listed any properties yet.
+              You haven&apos;t listed any properties yet. <Link href="/seller/new">List your first one</Link>.
             </p>
           ) : (
             <div className={styles.list}>
@@ -87,32 +103,43 @@ export default function SellerListingsPage() {
             <>
               <div className={styles.detailHeader}>
                 <div>
-                  <h2 className={styles.detailTitle}>
-                    {selectedProperty.title}
-                  </h2>
-                  <p className={styles.detailAddress}>
-                    {selectedProperty.address}, {selectedProperty.city}
-                  </p>
+                  <h2 className={styles.detailTitle}>{selectedProperty.title}</h2>
+                  <p className={styles.detailAddress}>{formatAddress(selectedProperty)}</p>
+                  <Link href={`/property/${selectedProperty.id}`} className={styles.detailAddress}>
+                    View listing →
+                  </Link>
                 </div>
                 <span className={styles.detailPrice}>
                   {formatPrice(selectedProperty.price, selectedProperty.status)}
                 </span>
               </div>
 
+              <VerificationPanel
+                key={selectedProperty.id + selectedProperty.verificationStatus}
+                property={selectedProperty}
+                onUpdated={handleUpdated}
+                onDeleted={handleDeleted}
+              />
+
               <div className={styles.requestsHeader}>
                 <h3 className={styles.requestsHeading}>Purchase requests</h3>
                 <span className={styles.count}>
-                  {selectedRequests.length} request
-                  {selectedRequests.length !== 1 ? "s" : ""}
+                  {selectedRequests.length} request{selectedRequests.length !== 1 ? "s" : ""}
                 </span>
               </div>
 
-              {selectedRequests.length === 0 ? (
+              {!isPublicStatus(selectedProperty.verificationStatus) ? (
+                <div className={styles.emptyRequests}>
+                  <p className={styles.emptyTitle}>Not open to buyers yet</p>
+                  <p className={styles.emptyBody}>
+                    Buyers can only see and request this property once the government has verified it.
+                  </p>
+                </div>
+              ) : selectedRequests.length === 0 ? (
                 <div className={styles.emptyRequests}>
                   <p className={styles.emptyTitle}>No requests yet</p>
                   <p className={styles.emptyBody}>
-                    You&apos;ll see buyer inquiries and offers here as they
-                    come in.
+                    You&apos;ll see buyer inquiries and offers here as they come in.
                   </p>
                 </div>
               ) : (
@@ -129,9 +156,7 @@ export default function SellerListingsPage() {
               )}
             </>
           ) : (
-            <p className={styles.emptyMuted}>
-              Select a listing to see its requests.
-            </p>
+            !isLoading && !loadError && <p className={styles.emptyMuted}>Select a listing to see its details.</p>
           )}
         </main>
       </div>

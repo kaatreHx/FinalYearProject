@@ -1,15 +1,16 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import tableStyles from "@/components/admin/AdminTable.module.css";
-import { MOCK_PROPERTIES } from "@/lib/properties";
+import { fetchPublicProperties } from "@/lib/properties";
 import {
   MOCK_PURCHASE_REQUESTS,
   formatRequestDate,
 } from "@/lib/purchaseRequests";
 import type { PurchaseRequest, PurchaseRequestStatus } from "@/types/purchase-request";
+import type { Property } from "@/types/property";
 
 const STATUS_FILTERS: (PurchaseRequestStatus | "All")[] = [
   "All",
@@ -20,6 +21,14 @@ const STATUS_FILTERS: (PurchaseRequestStatus | "All")[] = [
 
 export default function AdminRequestsPage() {
   const [requests, setRequests] = useState<PurchaseRequest[]>(MOCK_PURCHASE_REQUESTS);
+  const [properties, setProperties] = useState<Property[]>([]);
+
+  // Requests are still mocked; listings are real, used only to resolve titles/owners.
+  useEffect(() => {
+    fetchPublicProperties({ type: "All", minPrice: null, maxPrice: null })
+      .then(setProperties)
+      .catch(() => setProperties([]));
+  }, []);
   const [statusFilter, setStatusFilter] = useState<PurchaseRequestStatus | "All">("All");
 
   const rows = useMemo(() => {
@@ -27,12 +36,12 @@ export default function AdminRequestsPage() {
       .filter((r) => statusFilter === "All" || r.status === statusFilter)
       .map((request) => ({
         ...request,
-        property: MOCK_PROPERTIES.find((p) => p.id === request.propertyId),
+        property: properties.find((p) => p.id === request.propertyId),
       }))
       .sort(
         (a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()
       );
-  }, [requests, statusFilter]);
+  }, [requests, properties, statusFilter]);
 
   function updateStatus(id: string, status: PurchaseRequestStatus) {
     // Mocked — no admin/requests endpoint exists yet, see

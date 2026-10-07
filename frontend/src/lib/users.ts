@@ -11,7 +11,7 @@ export async function updateProfile(payload: UserProfile) {
   });
   if (!res.ok) {
     const errorBody = await res.json().catch(() => null);
-    throw new Error(errorBody?.message ?? "Couldn't update your profile.");
+    throw new Error(errorBody?.error ?? errorBody?.message ?? "Couldn't update your profile.");
   }
   return res.json() as Promise<UserProfile>;
 }
@@ -25,7 +25,7 @@ export async function changePassword(payload: PasswordChangePayload) {
   });
   if (!res.ok) {
     const errorBody = await res.json().catch(() => null);
-    throw new Error(errorBody?.message ?? "Couldn't change your password.");
+    throw new Error(errorBody?.error ?? errorBody?.message ?? "Couldn't change your password.");
   }
   return res.json() as Promise<{ success: boolean }>;
 }
@@ -40,7 +40,7 @@ export async function me() {
   });
   if (!res.ok) {
     const errorBody = await res.json().catch(() => null);
-    throw new Error(errorBody?.message ?? "Couldn't get your profile.");
+    throw new Error(errorBody?.error ?? errorBody?.message ?? "Couldn't get your profile.");
   }
   return res.json() as Promise<UserProfile>;
 }

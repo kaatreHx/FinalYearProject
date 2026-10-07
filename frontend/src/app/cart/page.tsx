@@ -1,16 +1,39 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import DashboardNav from "@/components/property/DashboardNav";
 import CartLineItem from "@/components/property/CartLineItem";
 import { useCart } from "@/context/CartContext";
-import { MOCK_PROPERTIES } from "@/lib/properties";
+import { fetchProperty } from "@/lib/properties";
+import type { Property } from "@/types/property";
 import styles from "./page.module.css";
 
 export default function CartPage() {
   const { cartIds, clearCart } = useCart();
-  const items = MOCK_PROPERTIES.filter((p) => cartIds.includes(p.id));
+  const [loaded, setLoaded] = useState<Property[]>([]);
+  const [isLoading, setIsLoading] = useState(cartIds.length > 0);
 
+  // The cart only stores ids; load the current listing data for each one.
+  useEffect(() => {
+    let cancelled = false;
+    if (cartIds.length === 0) {
+      setLoaded([]);
+      setIsLoading(false);
+      return;
+    }
+    setIsLoading(true);
+    Promise.allSettled(cartIds.map((id) => fetchProperty(id))).then((results) => {
+      if (cancelled) return;
+      setLoaded(results.flatMap((r) => (r.status === "fulfilled" ? [r.value] : [])));
+      setIsLoading(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [cartIds]);
+
+  const items = loaded.filter((p) => cartIds.includes(p.id));
   const saleCount = items.filter((p) => p.status === "For Sale").length;
   const rentCount = items.filter((p) => p.status === "For Rent").length;
 
@@ -28,7 +51,9 @@ export default function CartPage() {
           )}
         </div>
 
-        {items.length === 0 ? (
+        {isLoading ? (
+          <p className={styles.emptyBody}>Loading your saved listings…</p>
+        ) : items.length === 0 ? (
           <div className={styles.empty}>
             <p className={styles.emptyTitle}>Your cart is empty</p>
             <p className={styles.emptyBody}>
@@ -66,8 +91,7 @@ export default function CartPage() {
                 Request viewings
               </button>
               <p className={styles.summaryNote}>
-                An agent will reach out to schedule viewing times for each
-                listing above.
+                An agent will reach out to schedule viewing times for each listing above.
               </p>
             </aside>
           </div>

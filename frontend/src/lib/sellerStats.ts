@@ -1,4 +1,3 @@
-import { getPropertiesByOwner } from "@/lib/properties";
 import type { Property } from "@/types/property";
 import type { PurchaseRequest } from "@/types/purchase-request";
 
@@ -80,11 +79,9 @@ export interface SellerSummary {
 }
 
 export function getSellerSummary(
-  sellerId: string,
-  properties: Property[],
+  myProperties: Property[],
   requests: PurchaseRequest[]
 ): SellerSummary {
-  const myProperties = getPropertiesByOwner(properties, sellerId);
   const myPropertyIds = new Set(myProperties.map((p) => p.id));
   const myRequests = requests.filter((r) => myPropertyIds.has(r.propertyId));
 

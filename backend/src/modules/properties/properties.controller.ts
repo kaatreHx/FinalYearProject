@@ -73,6 +73,6 @@ export async function metadata(req: Request, res: Response) {
 
 export async function mint(req: AuthRequest, res: Response) {
     try {
-        res.status(200).json(await mintProperty(req.user!.userId, req.params.id, req.body?.walletAddress));
+        res.status(200).json(await mintProperty(req.user!.userId, req.params.id));
     } catch (err) { sendError(res, err); }
 }

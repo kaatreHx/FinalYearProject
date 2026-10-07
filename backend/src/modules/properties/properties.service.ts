@@ -121,10 +121,19 @@ export async function createProperty(userId: string, raw: PropertyInput, uploade
 
     await assertNoDuplicateRegistration(clean.landRegistrationNumber);
 
+    const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { walletAddress: true },
+    });
+    if (!user?.walletAddress || !WALLET_REGEX.test(user.walletAddress)) {
+        throw new AppError(409, 'Your blockchain wallet has not been configured');
+    }
+
     const property = await prisma.property.create({
         data: {
             ...clean,
             sellerId: userId,
+            ownerWalletAddress: user.walletAddress,
             status: 'PENDING',
             files: { create: uploaded },
             statusLogs: { create: { fromStatus: null, toStatus: 'PENDING', actorId: userId, note: 'Listing created' } },
@@ -330,7 +339,7 @@ export function rejectProperty(id: string, officerId: string, reason?: string) {
 // ---------------------------------------------------------------------------
 // NFT minting (seller-triggered, only after government verification)
 // ---------------------------------------------------------------------------
-export async function mintProperty(userId: string, id: string, walletFromBody?: string) {
+export async function mintProperty(userId: string, id: string) {
     const p = await prisma.property.findUnique({ where: { id } });
     if (!p || p.sellerId !== userId) throw new AppError(404, 'Property not found');
     if (p.status !== 'VERIFIED') {
@@ -339,8 +348,14 @@ export async function mintProperty(userId: string, id: string, walletFromBody?: 
             : `Only VERIFIED properties can be minted (current status: ${p.status})`);
     }
 
-    const wallet = (walletFromBody?.trim() || p.ownerWalletAddress) ?? '';
-    if (!WALLET_REGEX.test(wallet)) throw new AppError(400, 'A valid walletAddress is required to receive the NFT');
+    const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { walletAddress: true },
+    });
+    const wallet = user?.walletAddress ?? '';
+    if (!WALLET_REGEX.test(wallet)) {
+        throw new AppError(409, 'Your blockchain wallet has not been configured');
+    }
     assertNftConfigured();
 
     // Atomically claim the property so two concurrent requests can't both mint.

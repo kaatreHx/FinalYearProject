@@ -19,6 +19,8 @@ out/
 .tsbuildinfo
 
 # Prisma & Local Databases
+prisma.config.js*
+prisma.config.d.ts*
 src/generated/
 prisma/generated/
 *.db

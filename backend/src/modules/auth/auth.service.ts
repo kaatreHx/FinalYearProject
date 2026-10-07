@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../../config/db';
+import { createUserWallet, encryptPrivateKey } from './wallet.service';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
@@ -11,15 +12,36 @@ export async function registerUser(firstName: string, lastName: string, email: s
         if (existing) throw new Error('Email already registered');
 
         const hashedPassword = await bcrypt.hash(password, 10);
+        const wallet = createUserWallet();
+
         const user = await tx.user.create({
-            data: { firstName, lastName, email, password: hashedPassword, isAgent },
+            data: {
+                firstName,
+                lastName,
+                email,
+                password: hashedPassword,
+                isAgent,
+                walletAddress: wallet.address,
+                encryptedPrivateKey: encryptPrivateKey(wallet.privateKey),
+            },
         });
 
-        return user
+        return { user, walletPrivateKey: wallet.privateKey };
     })
 
-    const token = jwt.sign({ userId: result.id, role: result.isAgent }, JWT_SECRET, { expiresIn: '7d' });
-    return { user: { id: result.id, firstName: result.firstName, lastName: result.lastName, email: result.email, isAgent: result.isAgent }, token };
+    const token = jwt.sign({ userId: result.user.id, role: result.user.isAgent }, JWT_SECRET, { expiresIn: '7d' });
+    return {
+        user: {
+            id: result.user.id,
+            firstName: result.user.firstName,
+            lastName: result.user.lastName,
+            email: result.user.email,
+            isAgent: result.user.isAgent,
+            walletAddress: result.user.walletAddress,
+        },
+        token,
+        walletPrivateKey: result.walletPrivateKey,
+    };
 }
 
 export async function loginUser(email: string, password: string, keepSignedIn: boolean) {
@@ -32,5 +54,15 @@ export async function loginUser(email: string, password: string, keepSignedIn: b
     const expiresIn = keepSignedIn ? "30d" : "20s";
 
     const token = jwt.sign({ userId: user.id, isAgent: user.isAgent }, JWT_SECRET, { expiresIn: expiresIn });
-    return { user: { id: user.id, firstName: user.firstName, lastName: user.lastName, email: user.email, isAgent: user.isAgent }, token };
+    return {
+        user: {
+            id: user.id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email,
+            isAgent: user.isAgent,
+            walletAddress: user.walletAddress,
+        },
+        token,
+    };
 }

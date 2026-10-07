@@ -21,6 +21,8 @@ model User {
   phone          String?         @unique
   email          String          @unique
   password       String
+  walletAddress  String? @unique
+  encryptedPrivateKey String?
   kycApplication KycApplication?
   isAgent        Boolean         @default(false)
   isGovernment   Boolean         @default(false) // NEW: government officer flag (set manually in DB)

@@ -1,11 +1,13 @@
 # Property listing + government verification + NFT
 
 ## Setup
-1. `npm i ethers`
-2. Merge `prisma/property.prisma` into your `schema.prisma` (+ the two `User` fields noted at the top), then `npx prisma migrate dev -n property_listing`
+1. `npm install`
+2. Add the Prisma wallet fields with `npx prisma migrate dev -n add_user_wallet`
+3. Configure the wallet encryption secret and NFT settings below
 3. Mark government officers in the DB: `UPDATE "User" SET "isGovernment" = true WHERE email = '...'`
 4. Add to `.env`:
    ```
+   WALLET_ENCRYPTION_KEY=replace-with-a-long-random-secret
    PUBLIC_BASE_URL=https://your-api-domain      # used in NFT tokenURI / image URLs
    NFT_RPC_URL=...                              # JSON-RPC endpoint of your chain
    NFT_CONTRACT_ADDRESS=0x...                   # deployed contracts/PropertyNFT.sol
@@ -28,7 +30,7 @@ gov can reject from PENDING/DISPATCHED (REJECTED); seller edits -> back to PENDI
 | PUT | /api/properties/:id | seller | PENDING/REJECTED only; optional new files + `removeFileIds`; resets to PENDING |
 | DELETE | /api/properties/:id | seller | PENDING/REJECTED only |
 | GET | /api/properties/:id/documents/:fileId | owner / gov | private ownership docs |
-| POST | /api/properties/:id/mint | seller | VERIFIED only; body `{ "walletAddress": "0x..." }` if not set at listing |
+| POST | /api/properties/:id/mint | seller | VERIFIED only; backend automatically uses the seller's registered wallet |
 | GET | /api/government/properties | gov | review queue, `?status=PENDING` (default) |
 | GET | /api/government/properties/:id | gov | full record + status history |
 | POST | /api/government/properties/:id/dispatch | gov | PENDING -> DISPATCHED, body `{ note? }` |
@@ -37,3 +39,14 @@ gov can reject from PENDING/DISPATCHED (REJECTED); seller edits -> back to PENDI
 
 Create fields: title, description, propertyType (HOUSE|APARTMENT|LAND|COMMERCIAL), price, areaSqFt,
 bedrooms?, bathrooms?, street, city, zip, landRegistrationNumber, ownerWalletAddress?
+
+
+### User wallet flow
+At registration the backend generates one Ethereum-compatible wallet per user with `ethers.Wallet.createRandom()`.
+The public address is stored in `User.walletAddress`. The private key is encrypted at rest using
+`WALLET_ENCRYPTION_KEY`; the plaintext private key is returned once in the registration response so
+the user can back it up. It is never placed in browser localStorage. No MetaMask is required.
+
+The NFT contract owner/minter wallet is separate from user wallets. `NFT_MINTER_PRIVATE_KEY` is the
+backend wallet that owns `PropertyNFT` and pays gas for `safeMint()`. The user's wallet is the NFT
+recipient.

@@ -145,16 +145,24 @@ async function main() {
   log(`government approved ${pendingKyc.applications.length} KYC application(s)`);
 
   // --- Property registration + verification ------------------------------
+  // Ownership proof is required at registration, so this is a multipart form.
+  const propForm = new FormData();
+  propForm.append("title", "Riverside Plot 21");
+  propForm.append("description", "A 4-anna plot near the river.");
+  propForm.append("location", "Pokhara, Kaski");
+  propForm.append("propertyType", "Residential");
+  propForm.append("areaSqft", "2200");
+  propForm.append(
+    "documents",
+    new Blob([Buffer.from("%PDF-1.4\n% fake land certificate for the e2e test\n")], {
+      type: "application/pdf",
+    }),
+    "land-certificate.pdf"
+  );
   const created = await api("/api/properties", {
     method: "POST",
     token: seller.token,
-    body: {
-      title: "Riverside Plot 21",
-      description: "A 4-anna plot near the river.",
-      location: "Pokhara, Kaski",
-      propertyType: "Residential",
-      areaSqft: 2200,
-    },
+    form: propForm,
   });
   const propertyId = created.property.id;
   log(`seller registered property #${propertyId}`);

@@ -149,6 +149,10 @@ You can switch between accounts in MetaMask to play different roles.
 
 ## 6. Purchase flow (text diagram)
 
+> **Full blockchain walkthrough:** who signs each transaction, what is stored on-chain, how the
+> backend verifies it, and how to inspect it yourself — see
+> [`Documentation/Blockchain-Flows.md`](Documentation/Blockchain-Flows.md).
+
 ```
                     ┌──────────────────────────────┐
                     │  Connect MetaMask (wallet)   │
